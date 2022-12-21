@@ -1,0 +1,74 @@
+/**
+ * mycp2.c	: copy command program
+ * @author	: Hyeongju Kim
+ * @email	: bigsky990528@dankook.ac.kr
+ * @version	: 1.0
+ * @date	: 2022. 11. 02
+ **/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <utmp.h>
+#include <time.h>
+
+#define COPYMODE 0644
+#define MAX_BUF 1024
+
+int main(int argc, char* argv[]){
+	int fd_open, fd_copy, read_size, write_size;
+	char buf[MAX_BUF];
+	struct stat attribute; 
+
+	if (argc !=3){
+		struct tm* t;
+		time_t base = time(NULL);
+		t = localtime(&base);
+		printf("USAGE : %s Original file, Copy File\n", argv[0]);
+		printf("%d %d %d\n", t->tm_year +1900, t->tm_mon + 1, t->tm_mday);
+		printf("김형주\n");
+		exit(-1);
+	}
+	fd_open = open(argv[1], O_RDONLY);
+	if(fd_open < 0){
+		printf("Can't open %s file with errno\n", argv[1]);
+		exit(-1);
+	}
+	if(strcmp(argv[1], argv[2]) == 0){
+			printf("Same File Name\n");
+			exit(-1);
+			}
+	if(stat(argv[1], &attribute)==-1){
+		printf("attribute error\n");
+		exit(-1);
+	}
+	mode_t fd_open_permisson = attribute.st_mode;
+
+	fd_copy = open(argv[2], O_RDWR | O_CREAT | O_EXCL | O_APPEND, fd_open_permisson, COPYMODE, 0664);
+	if(fd_copy < 0){
+		printf("The %s file already has exists%d\n", argv[2], errno);
+		exit(-1);
+	}
+	while(1){
+		read_size = read(fd_open, buf, MAX_BUF);
+		if(read_size == 0)
+			break;
+		else if(read_size < 0){
+			printf("Can't read file\n");
+			exit(-1);
+		}
+	}
+		write_size = write(fd_copy, buf, read_size);
+		if(write_size < 0){
+			printf("Can't wirte file\n");
+			exit(-1);
+	}
+	close(fd_open);
+	close(fd_copy);
+	return 0;
+}
